@@ -1,0 +1,34 @@
+{
+  "name": "obsidian-logger",
+  "version": "1.0.0",
+  "description": "全局日志收集和智能自动重载 - 为 Obsidian 插件开发者提供完整的调试解决方案",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "version": "node version-bump.mjs && git add manifest.json versions.json",
+    "lint": "eslint src --ext .ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "obsidian",
+    "plugin",
+    "logger",
+    "auto-reload",
+    "debugging",
+    "development"
+  ],
+  "author": "LINYF510",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^16.11.6",
+    "@typescript-eslint/eslint-plugin": "5.29.0",
+    "@typescript-eslint/parser": "5.29.0",
+    "builtin-modules": "3.3.0",
+    "esbuild": "0.17.3",
+    "obsidian": "latest",
+    "tslib": "2.4.0",
+    "typescript": "4.7.4"
+  }
+}
+
