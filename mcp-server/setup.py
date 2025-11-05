@@ -6,9 +6,7 @@ Obsidian Cursor Logger MCP Server
 import os
 from setuptools import setup, find_packages
 
-with open("requirements.txt") as f:
-    requirements = f.read().splitlines()
-
+# 不从 requirements.txt 读取，使用 pyproject.toml 中的定义
 setup(
     name="obsidian-logger-mcp",
     version="1.0.0",
@@ -20,7 +18,10 @@ setup(
     url="https://github.com/LINYF510/obsidian-cursor-logger",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
-    install_requires=requirements,
+    install_requires=[
+        "mcp>=1.19.0",
+        "watchdog>=3.0.0",
+    ],
     python_requires=">=3.10",
     classifiers=[
         "Development Status :: 4 - Beta",
