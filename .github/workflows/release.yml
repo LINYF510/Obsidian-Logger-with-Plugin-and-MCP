@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: global-logger/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./global-logger
+        run: npm ci
+      
+      - name: Build plugin
+        working-directory: ./global-logger
+        run: npm run build
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Verify version consistency
+        run: |
+          TAG_VERSION="${{ steps.get_version.outputs.VERSION }}"
+          MANIFEST_VERSION=$(jq -r '.version' global-logger/manifest.json)
+          PACKAGE_VERSION=$(jq -r '.version' global-logger/package.json)
+          
+          echo "Tag version: $TAG_VERSION"
+          echo "Manifest version: $MANIFEST_VERSION"
+          echo "Package version: $PACKAGE_VERSION"
+          
+          if [ "$TAG_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "❌ Version mismatch: tag ($TAG_VERSION) != manifest ($MANIFEST_VERSION)"
+            exit 1
+          fi
+          
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "⚠️ Warning: tag ($TAG_VERSION) != package.json ($PACKAGE_VERSION)"
+          fi
+          
+          echo "✅ Version verification passed"
+      
+      - name: Create release archive
+        run: |
+          cd global-logger
+          mkdir -p release
+          cp main.js manifest.json release/
+          if [ -f "styles.css" ]; then
+            cp styles.css release/
+          fi
+          cd release
+          zip -r ../obsidian-logger-${{ steps.get_version.outputs.VERSION }}.zip .
+          cd ..
+          rm -rf release
+      
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          
+          # 尝试从 CHANGELOG.md 提取此版本的更新内容
+          if [ -f "CHANGELOG.md" ]; then
+            # 使用 awk 提取版本段落
+            NOTES=$(awk "/## \[$VERSION\]/,/## \[/{if (/## \[/ && !/$VERSION/) exit; if (!/## \[$VERSION\]/) print}" CHANGELOG.md)
+            
+            if [ -z "$NOTES" ]; then
+              NOTES="查看 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) 获取完整更新日志"
+            fi
+          else
+            NOTES="Release v$VERSION"
+          fi
+          
+          # 保存到文件（避免多行问题）
+          echo "$NOTES" > release_notes.txt
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Obsidian Logger v${{ steps.get_version.outputs.VERSION }}
+          body_path: release_notes.txt
+          files: |
+            global-logger/obsidian-logger-${{ steps.get_version.outputs.VERSION }}.zip
+            global-logger/main.js
+            global-logger/manifest.json
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Trigger community plugin update (if applicable)
+        run: |
+          echo "✅ Release created successfully"
+          echo "📝 Next steps:"
+          echo "  1. Update Obsidian community plugins repository"
+          echo "  2. Announce release on forums/social media"
+          echo "  3. Monitor for issues"
+

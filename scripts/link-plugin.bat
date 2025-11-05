@@ -6,15 +6,22 @@ echo Obsidian Logger - 链接插件
 echo ========================================
 echo.
 
-REM 设置默认 vault 路径
-set "DEFAULT_VAULT=C:\Users\Fancy\AppData\Roaming\obsidian\Obsidian Sandbox"
-
-REM 如果提供了参数，使用参数作为 vault 路径
-if not "%~1"=="" (
-    set "VAULT_PATH=%~1"
-) else (
-    set "VAULT_PATH=%DEFAULT_VAULT%"
+REM 检查是否提供了 vault 路径参数
+if "%~1"=="" (
+    echo [错误] 请提供 Obsidian Vault 路径
+    echo.
+    echo 用法:
+    echo   link-plugin.bat [vault路径]
+    echo.
+    echo 示例:
+    echo   link-plugin.bat "C:\Users\YourName\Documents\MyVault"
+    echo   link-plugin.bat "%APPDATA%\obsidian\MyVault"
+    echo.
+    pause
+    exit /b 1
 )
+
+set "VAULT_PATH=%~1"
 
 echo 目标 Vault: %VAULT_PATH%
 echo.
@@ -22,12 +29,6 @@ echo.
 REM 检查 vault 是否存在
 if not exist "%VAULT_PATH%" (
     echo [错误] Vault 路径不存在: %VAULT_PATH%
-    echo.
-    echo 用法:
-    echo   link-plugin.bat [vault路径]
-    echo.
-    echo 示例:
-    echo   link-plugin.bat "C:\Users\YourName\Documents\MyVault"
     echo.
     pause
     exit /b 1

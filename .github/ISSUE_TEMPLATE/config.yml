@@ -1,0 +1,15 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 查看文档
+    url: https://github.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP/blob/main/README.md
+    about: 查阅项目文档获取帮助
+  - name: 💬 GitHub Discussions
+    url: https://github.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP/discussions
+    about: 在 Discussions 中提问、分享经验或参与讨论
+  - name: 📚 用户手册
+    url: https://github.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP/blob/main/USER_MANUAL.md
+    about: 查看详细的用户使用手册
+  - name: 🔧 开发指南
+    url: https://github.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP/blob/main/DEVELOPMENT.md
+    about: 开发者文档和技术指南
+

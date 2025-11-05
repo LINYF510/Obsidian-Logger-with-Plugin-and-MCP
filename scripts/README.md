@@ -67,6 +67,16 @@ chmod +x link-plugin.sh
 3. 在此 README 中添加脚本说明
 4. 更新项目文档中的相关章节
 
+## 脚本列表
+
+| 脚本 | 平台 | 说明 |
+|------|------|------|
+| `install.bat` / `install.sh` | Windows / Linux/macOS | 自动安装所有依赖 |
+| `dev-setup.bat` / `dev-setup.sh` | Windows / Linux/macOS | 配置开发环境 |
+| `link-plugin.bat` / `link-plugin.sh` | Windows / Linux/macOS | 链接插件到 Obsidian |
+| `install-to-sandbox.bat` | Windows | 安装到 Obsidian Sandbox |
+| `reorganize-docs.bat` | Windows | 重组文档结构 |
+
 ## 许可证
 
 MIT

@@ -17,48 +17,160 @@
 
 ## 🚀 快速开始
 
-### 安装
+### 第一步：安装 Obsidian 插件
+
+> **重要**：必须先安装插件才能生成日志，MCP Server 才有数据可读取
+
+#### 方式 A：从 Release 安装（推荐 - 适合普通用户）
+
+1. 从 [Releases](https://github.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP/releases) 下载最新版本
+2. 解压到 Obsidian vault 的插件目录：
+   - Windows: `%APPDATA%\Obsidian\YourVault\.obsidian\plugins\obsidian-logger\`
+   - macOS: `~/Library/Application Support/obsidian/YourVault/.obsidian/plugins/obsidian-logger/`
+   - Linux: `~/.config/obsidian/YourVault/.obsidian/plugins/obsidian-logger/`
+
+#### 方式 B：手动构建（开发者）
 
 ```bash
 # 克隆仓库
 git clone https://github.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP.git
-cd Obsidian-Logger-with-Plugin-and-MCP
+cd Obsidian-Logger-with-Plugin-and-MCP/global-logger
 
-# 安装依赖
+# 安装依赖并构建
 npm install
-
-# 构建插件
 npm run build
 
-# 安装到 Obsidian（使用符号链接，推荐）
-ln -s $(pwd) /path/to/vault/.obsidian/plugins/obsidian-cursor-logger
+# 链接到 Obsidian（推荐使用符号链接）
+# 详见 scripts/link-plugin.bat 或 link-plugin.sh
 ```
 
-### 配置
+#### 启用插件
 
-1. **启用插件**：
-   - 打开 Obsidian → 设置 → 第三方插件
-   - 找到"Obsidian Cursor Logger"并启用
+1. 打开 Obsidian
+2. 进入 **设置 → 第三方插件**
+3. 关闭 **安全模式**（如果已开启）
+4. 启用 **Obsidian Logger**
+5. 在控制台（Ctrl+Shift+I）查看启动日志：
+   ```
+   🚀 Obsidian Logger 启动中...
+   ✅ Obsidian Logger 已启动
+   📝 日志模块：已启动
+   🤖 Auto-Reload 模块：已启动（smart 模式）
+   ```
 
-2. **配置 MCP Server**：
-   - 编辑 Cursor 配置文件：`~/.config/Cursor/User/settings.json`
-   - 添加以下配置：
+#### 验证插件工作
+
+插件会自动创建日志文件：`vault目录/../obsidian-logger/obsidian-debug.log`
+
+检查文件是否存在并包含日志内容。
+
+---
+
+### 第二步：安装 MCP Server（可选）
+
+> **说明**：MCP Server 提供 AI 智能分析功能，如果只需要基础日志收集，可以跳过此步骤
+
+#### 方式 1: 使用 uvx（推荐）
+
+**1. 安装 uv**
+
+```bash
+# Windows (PowerShell)
+irm https://astral.sh/uv/install.ps1 | iex
+
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 或使用 pip
+pip install uv
+```
+
+**2. 创建配置文件**
+
+```bash
+# 下载并运行配置向导
+curl -O https://raw.githubusercontent.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP/main/mcp-server/create-config.py
+python create-config.py
+```
+
+向导会自动检测你的 Vault 和日志文件路径，生成配置到 `~/.obsidian-logger/config.json`
+
+**3. 配置 Cursor MCP**
+
+编辑 Cursor 配置文件 (`~/.config/Cursor/User/settings.json`):
 
 ```json
 {
   "mcpServers": {
     "obsidian-logger": {
-      "command": "python3",
-      "args": ["/absolute/path/to/mcp-obsidian-logger.py"],
-      "description": "Obsidian 日志收集和 Auto-Reload 管理服务",
-      "transport": "stdio",
-      "disabled": false
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/LINYF510/Obsidian-Logger-with-Plugin-and-MCP",
+        "obsidian-logger-mcp",
+        "/absolute/path/to/config.json"
+      ],
+      "description": "Obsidian 日志收集和 Auto-Reload 服务",
+      "transport": "stdio"
     }
   }
 }
 ```
 
-3. **配置 Auto-Reload 模式**（可选）：
+**4. 重启 Cursor 并测试**
+
+```
+@obsidian-logger read_logs
+```
+
+应该能看到插件生成的日志内容。
+
+详见 [uvx 安装指南](docs/guides/uvx安装指南.md)
+
+#### 方式 2: 本地开发模式（开发者）
+
+如果你已经完成第一步（安装插件），现在安装 MCP Server 本地版本：
+
+```bash
+# 进入 MCP Server 目录
+cd mcp-server
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 创建配置文件
+python create-config.py
+# 或手动复制：cp config.example.json config.json
+```
+
+**配置 Cursor MCP**（本地模式）:
+
+```json
+{
+  "mcpServers": {
+    "obsidian-logger": {
+      "command": "python",
+      "args": [
+        "/absolute/path/to/mcp-server/src/mcp_obsidian_logger.py",
+        "/absolute/path/to/config.json"
+      ],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+**测试**：重启 Cursor 后使用 `@obsidian-logger read_logs` 验证
+
+---
+
+### 配置说明
+
+1. **启用 Obsidian 插件**：
+   - 打开 Obsidian → 设置 → 第三方插件
+   - 找到"Obsidian Logger"并启用
+
+2. **配置 Auto-Reload 模式**（可选）：
    - 默认使用智能模式，自动识别开发中的插件
    - 可在 Obsidian 设置中调整监控模式：
      - 🤖 **自动模式**：监控所有已启用的插件

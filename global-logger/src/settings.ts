@@ -11,6 +11,8 @@ export class CursorLoggerSettingTab extends PluginSettingTab {
   plugin: ObsidianLoggerPlugin;
   private logStats: LogStats;
   private reloadStats: ReloadStats;
+  private currentPage: 'logger' | 'autoreload' | 'advanced' = 'logger';
+  private settingsRefreshTimer: NodeJS.Timeout | null = null;
   
   constructor(app: App, plugin: ObsidianLoggerPlugin) {
     super(app, plugin);
@@ -23,20 +25,133 @@ export class CursorLoggerSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     
+    // 添加样式
+    const style = containerEl.createEl('style');
+    style.textContent = `
+      .cursor-logger-nav-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid var(--background-modifier-border);
+        padding-bottom: 10px;
+      }
+      
+      .cursor-logger-nav-bar .nav-button {
+        padding: 8px 16px;
+        border: none;
+        background: var(--background-secondary);
+        color: var(--text-normal);
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+      
+      .cursor-logger-nav-bar .nav-button:hover {
+        background: var(--background-modifier-hover);
+      }
+      
+      .cursor-logger-nav-bar .nav-button.active {
+        background: var(--interactive-accent);
+        color: var(--text-on-accent);
+        font-weight: 600;
+      }
+      
+      .cursor-logger-settings-content {
+        margin-top: 20px;
+      }
+    `;
+    
     // 页面标题
     containerEl.createEl('h1', { text: 'Obsidian Logger 设置' });
     
-    // 日志模块设置
-    this.displayLoggerSettings(containerEl);
+    // 导航栏
+    this.createNavigationBar(containerEl);
     
-    // Auto-Reload 模块设置
-    this.displayAutoReloadSettings(containerEl);
+    // 内容区域
+    const contentEl = containerEl.createDiv({ cls: 'cursor-logger-settings-content' });
     
-    // 运行状态
-    this.displayStatus(containerEl);
+    // 根据当前页面渲染不同内容
+    switch (this.currentPage) {
+      case 'logger':
+        this.displayLoggerSettings(contentEl);
+        this.displayLoggerStatus(contentEl);
+        break;
+      case 'autoreload':
+        this.displayAutoReloadSettings(contentEl);
+        this.displayAutoReloadStatus(contentEl);
+        break;
+      case 'advanced':
+        this.displayAdvancedOptions(contentEl);
+        break;
+    }
     
-    // 高级选项
-    this.displayAdvancedOptions(containerEl);
+    // 启动自动刷新（如果启用且未运行）
+    this.startSettingsRefresh();
+  }
+  
+  hide(): void {
+    this.stopSettingsRefresh();
+  }
+  
+  /**
+   * 创建导航栏
+   */
+  private createNavigationBar(containerEl: HTMLElement): void {
+    const navBar = containerEl.createDiv({ cls: 'cursor-logger-nav-bar' });
+    
+    const pages = [
+      { id: 'logger', name: '日志模块', icon: '📝' },
+      { id: 'autoreload', name: 'Auto-Reload', icon: '🤖' },
+      { id: 'advanced', name: '高级选项', icon: '🔧' }
+    ];
+    
+    pages.forEach(page => {
+      const button = navBar.createEl('button', {
+        text: `${page.icon} ${page.name}`,
+        cls: this.currentPage === page.id ? 'nav-button active' : 'nav-button'
+      });
+      
+      button.onclick = () => {
+        this.currentPage = page.id as any;
+        this.display();
+      };
+    });
+  }
+  
+  /**
+   * 启动设置页面自动刷新
+   */
+  private startSettingsRefresh(): void {
+    // 检查是否应该启用自动刷新
+    if (!this.plugin.settings.mcp.enabled || !this.plugin.settings.mcp.autoRefreshSettings) {
+      return;
+    }
+    
+    // 如果已经有定时器在运行，不要重复启动
+    if (this.settingsRefreshTimer) {
+      return;
+    }
+    
+    const interval = this.plugin.settings.mcp.refreshInterval;
+    this.settingsRefreshTimer = setInterval(async () => {
+      // 重新加载配置但不保存（避免触发配置监听）
+      await this.plugin.loadSettings(false);
+      this.display();
+    }, interval);
+    
+    console.log(`[Settings] 设置页面自动刷新已启动（间隔: ${interval}ms）`);
+  }
+  
+  /**
+   * 停止设置页面自动刷新
+   */
+  private stopSettingsRefresh(): void {
+    if (this.settingsRefreshTimer) {
+      clearInterval(this.settingsRefreshTimer);
+      this.settingsRefreshTimer = null;
+      console.log('[Settings] 设置页面自动刷新已停止');
+    }
   }
   
   /**
@@ -46,23 +161,55 @@ export class CursorLoggerSettingTab extends PluginSettingTab {
     // 分隔线
     containerEl.createEl('h2', { text: '📝 日志模块设置' });
     
-    // 日志文件路径（只读）
+    // 日志文件路径（可编辑）
     new Setting(containerEl)
       .setName('日志文件路径')
-      .setDesc('日志文件存储在 Vault 外部，避免进入 Obsidian 备份')
+      .setDesc('支持相对路径（相对于 Vault，如 ../obsidian-logger/debug.log）或绝对路径。修改后需要重载插件才能生效。')
       .addText(text => {
         text
-          .setValue(this.plugin.loggerModule.getLogFilePath())
-          .setDisabled(true);
+          .setPlaceholder('../obsidian-logger/obsidian-debug.log')
+          .setValue(this.plugin.settings.logger.logFilePath)
+          .onChange(async (value) => {
+            if (value.trim() === '') {
+              new Notice('❌ 路径不能为空');
+              return;
+            }
+            
+            // 保存路径
+            this.plugin.settings.logger.logFilePath = value.trim();
+            await this.plugin.saveSettings();
+            
+            // 提示需要重载
+            new Notice('⚠️ 日志路径已更新，请重载插件使其生效', 5000);
+          });
       })
       .addButton(button => button
+        .setButtonText('🔄 重载插件')
+        .setTooltip('重载插件以应用新路径')
+        .onClick(async () => {
+          const pluginId = this.plugin.manifest.id;
+          new Notice('正在重载插件...');
+          
+          try {
+            await (this.app as any).plugins.disablePlugin(pluginId);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            await (this.app as any).plugins.enablePlugin(pluginId);
+            new Notice('✅ 插件已重载，新路径已生效');
+          } catch (error) {
+            console.error('Failed to reload plugin:', error);
+            new Notice('❌ 重载失败，请手动重载插件');
+          }
+        }))
+      .addButton(button => button
         .setButtonText('📋 复制')
+        .setTooltip('复制当前路径')
         .onClick(() => {
           navigator.clipboard.writeText(this.plugin.loggerModule.getLogFilePath());
           new Notice('✅ 路径已复制到剪贴板');
         }))
       .addButton(button => button
         .setButtonText('📂 打开')
+        .setTooltip('在文件管理器中打开日志目录')
         .onClick(() => {
           const fs = require('fs');
           const path = require('path');
@@ -610,6 +757,87 @@ export class CursorLoggerSettingTab extends PluginSettingTab {
    * 显示高级选项
    */
   private displayAdvancedOptions(containerEl: HTMLElement): void {
+    // MCP 功能配置
+    containerEl.createEl('h2', { text: '🌐 MCP 远程控制' });
+    
+    // MCP 总开关
+    new Setting(containerEl)
+      .setName('启用 MCP 功能')
+      .setDesc('启用后支持通过 Cursor MCP Server 远程控制插件配置')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.mcp.enabled)
+        .onChange(async (value) => {
+          this.plugin.settings.mcp.enabled = value;
+          await this.plugin.saveSettings();
+          
+          // 根据开关状态启动/停止 MCP 服务
+          if (value) {
+            this.plugin.startMcpServices();
+          } else {
+            this.plugin.stopMcpServices();
+          }
+          
+          // 刷新页面显示相关配置
+          this.display();
+        }));
+    
+    // MCP 启用时显示详细配置
+    if (this.plugin.settings.mcp.enabled) {
+      // 设置页面自动刷新
+      new Setting(containerEl)
+        .setName('设置页面自动刷新')
+        .setDesc('MCP 修改配置后自动刷新设置页面显示')
+        .addToggle(toggle => toggle
+          .setValue(this.plugin.settings.mcp.autoRefreshSettings)
+          .onChange(async (value) => {
+            this.plugin.settings.mcp.autoRefreshSettings = value;
+            await this.plugin.saveSettings();
+            
+            // 重启设置页面刷新
+            this.stopSettingsRefresh();
+            if (value) {
+              this.startSettingsRefresh();
+            }
+          }));
+      
+      // 刷新间隔配置
+      new Setting(containerEl)
+        .setName('设置页面刷新间隔（秒）')
+        .setDesc('自动刷新的时间间隔。推荐: 1-5 秒')
+        .addText(text => text
+          .setPlaceholder('2')
+          .setValue(String(this.plugin.settings.mcp.refreshInterval / 1000))
+          .onChange(async (value) => {
+            const num = parseInt(value);
+            if (num >= 1 && num <= 10) {
+              this.plugin.settings.mcp.refreshInterval = num * 1000;
+              await this.plugin.saveSettings();
+              
+              // 重启刷新定时器（强制重启以应用新间隔）
+              this.stopSettingsRefresh();
+              this.startSettingsRefresh();
+            }
+          }));
+      
+      // 配置监听间隔
+      new Setting(containerEl)
+        .setName('配置监听间隔（毫秒）')
+        .setDesc('检测配置文件变化的间隔。推荐: 500-2000 毫秒')
+        .addText(text => text
+          .setPlaceholder('500')
+          .setValue(String(this.plugin.settings.mcp.configMonitorInterval))
+          .onChange(async (value) => {
+            const num = parseInt(value);
+            if (num >= 100 && num <= 5000) {
+              this.plugin.settings.mcp.configMonitorInterval = num;
+              await this.plugin.saveSettings();
+              
+              // 重启配置监听
+              this.plugin.restartConfigMonitor();
+            }
+          }));
+    }
+    
     containerEl.createEl('h2', { text: '🔧 高级选项' });
     
     // 打开开发者控制台

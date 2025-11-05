@@ -35,6 +35,14 @@ export interface PluginSettings {
     usePluginSpecific: boolean;          // 是否启用插件特定配置
     pluginSpecificFiles: Record<string, WatchedFileTypes>; // 每个插件的特定配置
   };
+  
+  // MCP 远程控制配置
+  mcp: {
+    enabled: boolean;              // MCP 功能总开关（默认 false）
+    autoRefreshSettings: boolean;  // 设置页面自动刷新
+    refreshInterval: number;       // 刷新间隔（毫秒）
+    configMonitorInterval: number; // 配置监听间隔（毫秒）
+  };
 }
 
 /**
@@ -54,7 +62,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   logger: {
     bufferSize: 100,
     flushInterval: 500,
-    logFilePath: '../cursor-logs/obsidian-debug.log',
+    logFilePath: '../obsidian-logger/obsidian-debug.log',
     enableRotation: true,
     maxFileSize: 10,
     enableAutoClean: true,
@@ -70,6 +78,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     globalWatchedFiles: DEFAULT_WATCHED_FILES,
     usePluginSpecific: false,
     pluginSpecificFiles: {}
+  },
+  mcp: {
+    enabled: false,               // 默认禁用
+    autoRefreshSettings: true,    // 启用时默认自动刷新
+    refreshInterval: 2000,        // 默认 2 秒
+    configMonitorInterval: 500    // 默认 500ms
   }
 };
 

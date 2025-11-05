@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-plugin:
+    name: Build Plugin
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: global-logger/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./global-logger
+        run: npm ci
+      
+      - name: Build plugin
+        working-directory: ./global-logger
+        run: npm run build
+      
+      - name: Verify build artifacts
+        working-directory: ./global-logger
+        run: |
+          if [ ! -f "main.js" ]; then
+            echo "❌ main.js not found"
+            exit 1
+          fi
+          if [ ! -f "manifest.json" ]; then
+            echo "❌ manifest.json not found"
+            exit 1
+          fi
+          echo "✅ Build artifacts verified"
+      
+      - name: Check bundle size
+        working-directory: ./global-logger
+        run: |
+          SIZE=$(wc -c < main.js)
+          SIZE_KB=$((SIZE / 1024))
+          echo "📦 Bundle size: ${SIZE_KB} KB"
+          if [ $SIZE_KB -gt 500 ]; then
+            echo "⚠️ Warning: Bundle size is large (> 500KB)"
+          fi
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-build
+          path: |
+            global-logger/main.js
+            global-logger/manifest.json
+            global-logger/styles.css
+          retention-days: 7
+  
+  build-mcp-server:
+    name: Build MCP Server Package
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        working-directory: ./mcp-server
+        run: python -m build
+      
+      - name: Check package
+        working-directory: ./mcp-server
+        run: twine check dist/*
+      
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-server-package
+          path: mcp-server/dist/
+          retention-days: 7
+  
+  dependency-review:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+
