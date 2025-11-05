@@ -11,6 +11,7 @@ lerna-debug.log*
 *.js.map
 !esbuild.config.mjs
 !version-bump.mjs
+!jest.config.js
 dist/
 build/
 
