@@ -18,6 +18,3 @@ global.console = {
 // 使此文件成为模块
 export {};
 
-
-export {};
-
