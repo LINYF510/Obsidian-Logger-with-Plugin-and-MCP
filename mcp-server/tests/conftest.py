@@ -2,14 +2,8 @@
 pytest 配置和通用 fixtures
 """
 
-import sys
-import os
-
-# 确保 UTF-8 编码（Windows 环境兼容）
-# 设置环境变量，由 GitHub Actions 和文件操作使用
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-
 import pytest
+import os
 import tempfile
 import json
 from pathlib import Path
@@ -18,7 +12,7 @@ from pathlib import Path
 @pytest.fixture
 def temp_log_file():
     """创建临时日志文件"""
-    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.log', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
         temp_path = f.name
         f.write('[10:30:45.123] [LOG] 测试日志 1\n')
         f.write('[10:30:46.456] [ERROR] 测试错误\n')
@@ -36,7 +30,7 @@ def temp_log_file():
 @pytest.fixture
 def empty_log_file():
     """创建空的临时日志文件"""
-    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.log', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
         temp_path = f.name
         f.write('')
     
@@ -55,7 +49,7 @@ def temp_config_file():
         "log_file_path": "/mock/logs/obsidian-debug.log"
     }
     
-    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, encoding='utf-8') as f:
         temp_path = f.name
         json.dump(config, f, ensure_ascii=False)
     
@@ -87,7 +81,7 @@ def temp_plugin_data():
         }
     }
     
-    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, encoding='utf-8') as f:
         temp_path = f.name
         json.dump(data, f, ensure_ascii=False)
     
