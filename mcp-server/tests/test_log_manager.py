@@ -4,7 +4,7 @@ LogManager 模块单元测试
 
 import pytest
 import os
-from src.log_manager import LogManager
+from log_manager import LogManager
 
 
 class TestLogManager:

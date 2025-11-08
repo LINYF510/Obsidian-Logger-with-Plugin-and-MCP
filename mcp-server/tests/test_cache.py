@@ -4,7 +4,7 @@ Cache 模块单元测试
 
 import pytest
 import time
-from src.cache import LogCache
+from cache import LogCache
 
 
 class TestLogCache:

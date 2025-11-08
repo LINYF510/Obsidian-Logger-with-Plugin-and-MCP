@@ -6,7 +6,7 @@ import pytest
 import os
 import json
 import tempfile
-from src.config_manager import ConfigManager
+from config_manager import ConfigManager
 
 
 class TestConfigManager:
