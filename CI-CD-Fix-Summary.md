@@ -23,11 +23,14 @@ TypeError: (0 , _os(...).availableParallelism) is not a function
 
 **变更**：
 ```yaml
-# 修改前
+# 初始修改前
 node-version: [16.x, 18.x, 20.x]
 
-# 修改后
+# 移除 16.x 后
 node-version: [18.x, 20.x]
+
+# 添加 22.x 支持后
+node-version: [18.x, 20.x, 22.x]
 ```
 
 ### 2. 添加 engines 字段到 package.json
@@ -51,9 +54,10 @@ node-version: [18.x, 20.x]
 ## 影响分析
 
 ### 正面影响
-- ✅ 所有 CI/CD 测试现在将在兼容的 Node.js 版本上运行（18.x 和 20.x）
+- ✅ 所有 CI/CD 测试现在将在兼容的 Node.js 版本上运行（18.x, 20.x 和 22.x）
 - ✅ 明确的版本要求防止未来的兼容性问题
-- ✅ 减少了测试矩阵的规模，加快 CI/CD 运行速度
+- ✅ 支持最新的 Node.js LTS 和 Current 版本（22.x）
+- ✅ 确保与用户本地开发环境兼容（如 Node.js 22.20.0）
 
 ### 潜在考虑
 - Node.js 16.x 已于 2023 年 9 月 11 日达到生命周期终点（EOL）
@@ -65,7 +69,8 @@ node-version: [18.x, 20.x]
 修复后，CI/CD 工作流应该：
 1. 在 Node.js 18.x 上成功运行所有测试
 2. 在 Node.js 20.x 上成功运行所有测试
-3. 不再出现 `availableParallelism is not a function` 错误
+3. 在 Node.js 22.x 上成功运行所有测试
+4. 不再出现 `availableParallelism is not a function` 错误
 
 ## 参考信息
 
