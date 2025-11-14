@@ -1,0 +1,811 @@
+# Obsidian-Cursor Logger 项目规则
+
+> 为 Obsidian 插件开发者提供完整、自动化、智能化的调试解决方案
+
+---
+
+## 📋 项目概述
+
+### 核心价值
+- **一次配置，永久有效** - 安装后自动为所有插件工作
+- **实时监控日志** - 所有日志自动集中收集和显示
+- **AI 智能分析** - 通过 Cursor AI 进行自动化错误分析和修复建议
+- **智能自动重载** - Auto-Reload 模块提供智能的插件自动重载功能
+- **极致效率** - 开发效率提升 5-10 倍
+
+### 功能模块
+1. **Global Logger 插件** - 单一插件，包含两大核心模块
+   - 日志模块：零侵入的全局日志收集系统
+   - Auto-Reload 模块：智能自动重载功能
+2. **MCP Server** - 提供智能日志分析和 Auto-Reload 管理工具的服务器
+
+### 系统架构（三层）
+```
+Cursor IDE（应用层）
+    ↑↓ MCP 协议（JSON-RPC）
+MCP Server（中间层）
+    ↑↓ 文件系统 API + 日志文件监听 + 插件配置管理
+Global Logger 插件（数据+控制层 - 单一插件，内部模块化）
+    ├─ 日志模块：拦截 console → 收集日志 → 写入文件
+    └─ Auto-Reload 模块：智能监控 → 检测变化 → 自动重载
+Obsidian 核心 + 插件生态
+```
+
+---
+
+## 📚 文档系统和知识库（重要！）
+
+### 文档目录结构
+
+#### `@docs/` - 项目文档（统一目录）
+- **`Obsidian-Cursor Logger 项目开发方案.md`** (90KB, 3799行)
+  - 完整的技术设计文档
+  - 包含所有架构、实现细节、性能指标
+  - 开发问题时优先参考此文档
+- **`目录结构.md`**
+  - 项目文件组织规划
+  - 记录所有文件和目录的用途
+  - **新建文件时必须同步更新此文档**
+- **`development/文档查询建议.md`**
+  - 文档使用指南
+  - 开发流程和最佳实践
+  - 常见问题解答
+
+### 文档管理核心原则 ⚠️
+
+1. **文档统一存放原则**（最高优先级）
+   - **所有新建的文档必须放在 `docs/` 目录下**
+   - 根据文档类型自动分类到子目录：
+     - `docs/architecture/` - 架构设计文档
+     - `docs/api/` - API 参考文档
+     - `docs/guides/` - 使用指南
+     - `docs/development/` - 开发相关文档
+     - `docs/testing/` - 测试相关文档
+   - **例外情况**：只有在 `@docs/目录结构.md` 中明确定义的文件才能放到其他目录
+   - 禁止在项目根目录创建 `.md` 文档（README.md 和特殊文档除外）
+
+2. **文件树同步原则**（强制要求）
+   - **创建或修改任何文件/目录时，必须立即同步更新 `@docs/目录结构.md`**
+   - 在文件树中添加相应的条目，格式：
+     ```
+     ├── 📁 目录名/
+     │   ├── 文件名.ext          # 中文简短说明（用途/功能）
+     ```
+   - 使用恰当的表情符号（📁 目录、📄 文档、🔧 配置、📝 代码等）
+   - 说明必须简洁明了，一句话概括文件用途
+   - 新增文件在文件树中用 `← 新增` 或 `# 新增` 标注
+
+3. **更新优先原则**
+   - 始终优先更新现有文档，避免创建新文档
+   - 检查 `docs/` 中是否已有相关内容
+   - 只有在确实需要新主题时才创建新文档
+
+4. **文档引用优先原则**
+   - 回答技术问题时，优先引用 `@docs/Obsidian-Cursor Logger 项目开发方案.md`
+   - 开发流程问题参考 `@docs/development/文档查询建议.md`
+   - 使用 `@docs/` 前缀标记引用
+
+### 文档创建和更新流程
+
+```
+任何文件操作（创建/修改/删除）
+  ↓
+【强制步骤 1】确定文件位置
+  ├─ 如果是文档 (.md) → 必须放在 docs/ 下并分类
+  ├─ 如果是代码/配置 → 参照 @docs/目录结构.md
+  └─ 特殊文件 → 必须在目录结构.md中有定义
+  ↓
+【强制步骤 2】更新 @docs/目录结构.md
+  ├─ 在对应位置添加文件条目
+  ├─ 添加中文简短说明（# 说明文字）
+  ├─ 新文件标注 ← 新增
+  └─ 保持文件树格式整齐
+  ↓
+【强制步骤 3】更新相关技术文档
+  ├─ 新功能 → 更新开发方案.md
+  ├─ API 变更 → 更新开发方案.md
+  └─ 流程变更 → 更新对应文档
+```
+
+### 文档分类规则
+
+```
+文档类型自动分类：
+
+架构和设计文档 → docs/architecture/
+  例：系统架构.md, 数据流设计.md
+
+API 和接口文档 → docs/api/
+  例：MCP工具API.md, 插件API.md
+
+使用指南 → docs/guides/
+  例：快速开始.md, 配置指南.md, 故障排查.md
+
+开发文档 → docs/development/
+  例：开发计划.md, 贡献指南.md, 编码规范.md
+
+测试文档 → docs/testing/
+  例：测试策略.md, 性能测试.md
+
+其他临时文档 → docs/misc/
+  例：会议记录.md, 临时笔记.md
+```
+
+### 文档更新触发条件
+
+```
+创建任何文件 → 立即更新 @docs/目录结构.md（强制）
+修改文件结构 → 立即更新 @docs/目录结构.md（强制）
+删除文件 → 立即更新 @docs/目录结构.md（强制）
+新功能开发 → 更新 @docs/Obsidian-Cursor Logger 项目开发方案.md
+API 变更 → 更新 @docs/Obsidian-Cursor Logger 项目开发方案.md
+开发流程变更 → 更新 @docs/development/文档查询建议.md
+```
+
+### 引用示例
+
+**正确的引用方式：**
+```
+根据 @docs/Obsidian-Cursor Logger 项目开发方案.md 中的描述，
+日志拦截模块使用函数劫持技术...
+```
+
+**文件树更新示例：**
+```markdown
+├── 📁 mcp-server/
+│   ├── src/
+│   │   ├── __init__.py
+│   │   ├── mcp_obsidian_logger.py  # 主程序
+│   │   ├── cache.py                # 缓存系统 ← 新增
+│   │   └── tools.py                # 工具定义
+```
+
+---
+
+## 🛠️ 技术栈
+
+### Global Logger 插件
+- **语言**: TypeScript 4.9+
+- **框架**: Obsidian Plugin API
+- **构建**: esbuild
+
+### MCP Server
+- **语言**: Python 3.8+
+- **协议**: JSON-RPC 2.0 (MCP Standard)
+- **依赖**: watchdog, asyncio
+- **工具数量**: 12个 (6个日志 + 6个 auto-reload)
+
+### 构建和开发
+- **包管理**: npm (插件), pip (MCP)
+- **版本控制**: Git
+- **IDE**: Cursor (推荐), VSCode
+- **Node.js**: 16+
+
+---
+
+## 📝 代码规范
+
+### TypeScript 代码规范
+
+**命名规范：**
+- 变量/函数：`camelCase` (例: `logBuffer`, `flushLogs()`)
+- 类名：`PascalCase` (例: `LogCollector`, `FileManager`)
+- 常量：`UPPER_SNAKE_CASE` (例: `MAX_BUFFER_SIZE`, `LOG_FILE_PATH`)
+- 私有方法：前缀 `_` (例: `_processLogEntry()`)
+- 文件名：`kebab-case` (例: `log-collector.ts`)
+
+**代码风格：**
+```typescript
+// 缩进：2 个空格
+// 最大行长：100 字符
+// 最大函数长度：50 行
+
+/**
+ * 日志收集器类
+ * 负责收集、格式化和缓冲日志条目
+ */
+class LogCollector {
+  private logBuffer: string[] = [];
+  private readonly maxBufferSize = 100;
+
+  /**
+   * 添加日志条目到缓冲区
+   * @param level 日志级别 (LOG, ERROR, WARN, DEBUG)
+   * @param message 日志消息
+   */
+  public addLogEntry(level: string, message: string): void {
+    const timestamp = this._getTimestamp();
+    const formattedLog = `[${timestamp}] [${level}] ${message}`;
+    this.logBuffer.push(formattedLog);
+    
+    if (this.logBuffer.length >= this.maxBufferSize) {
+      this.flushLogs();
+    }
+  }
+
+  private _getTimestamp(): string {
+    // 实现细节...
+  }
+}
+```
+
+**注释规范：**
+- 每个公开方法必须有 JSDoc 注释
+- 复杂逻辑必须有行注释
+- 使用中文注释，清晰明了
+- 使用 `TODO`, `FIXME`, `NOTE` 标记
+
+### Python 代码规范
+
+**命名规范：**
+- 变量/函数：`snake_case` (例: `log_cache`, `read_logs()`)
+- 类名：`PascalCase` (例: `LogCache`, `FileMonitor`)
+- 常量：`UPPER_SNAKE_CASE` (例: `MAX_CACHE_SIZE`)
+- 私有方法：前缀 `_` (例: `_update_cache()`)
+
+**代码风格：**
+```python
+# 遵循 PEP 8
+# 缩进：4 个空格
+# 最大行长：100 字符
+
+from typing import List, Optional
+import logging
+
+class LogCache:
+    """
+    日志缓存系统
+    
+    负责管理日志条目的内存缓存，提供快速访问和自动失效机制。
+    
+    Attributes:
+        max_size: 最大缓存条目数
+        cache: 日志条目列表
+    """
+    
+    def __init__(self, max_size: int = 1000):
+        """初始化日志缓存
+        
+        Args:
+            max_size: 最大缓存大小，默认 1000 条
+        """
+        self.max_size = max_size
+        self.cache: List[str] = []
+        self._logger = logging.getLogger(__name__)
+    
+    def add_entry(self, level: str, message: str) -> None:
+        """添加日志条目到缓存
+        
+        Args:
+            level: 日志级别
+            message: 日志消息
+        """
+        entry = f"[{level}] {message}"
+        self.cache.append(entry)
+        
+        if len(self.cache) > self.max_size:
+            self._evict_oldest()
+    
+    def _evict_oldest(self) -> None:
+        """移除最旧的日志条目"""
+        self.cache.pop(0)
+```
+
+**类型注解：**
+- 所有函数参数必须有类型注解
+- 所有函数返回值必须有类型注解
+- 使用 `typing` 模块的类型
+
+**文档字符串：**
+- 使用 Google 风格
+- 中文描述，清晰易懂
+
+---
+
+## 🏗️ 架构设计原则
+
+### 1. 零侵入原则
+- 插件安装后自动工作，不需要修改任何现有插件代码
+- 不需要修改 Obsidian 配置
+- 不需要用户额外配置
+- 通过函数劫持实现透明拦截
+
+### 2. 自动化原则
+- 自动拦截所有 console 输出
+- 自动收集和整理日志
+- 自动管理日志文件生命周期
+- 自动处理异常情况
+- 自动重载修改的插件
+
+### 3. 性能优先原则
+- **异步操作**，不阻塞主线程
+- **批量写入**，减少 I/O（500ms 或 100条触发）
+- **内存高效**，及时释放资源
+- **缓存优化**，最多 1000 条日志
+
+### 4. 可观测原则
+- 提供清晰的状态反馈
+- 记录所有关键操作
+- 支持调试模式
+- 易于问题排查
+
+### 防死循环机制 ⚠️
+```typescript
+// 关键：使用标志位防止日志系统自身输出被再次拦截
+let isLogging = false;
+
+console.log = (...args) => {
+  if (isLogging) return;  // 检查标志
+  isLogging = true;       // 设置标志
+  
+  originalLog(...args);   // 调用原始
+  logEntry('LOG', args);  // 记录日志
+  
+  isLogging = false;      // 重置标志
+}
+```
+
+---
+
+## ⚡ 性能要求
+
+### 硬性指标
+- **CPU 占用**: < 5% (包含热重载)
+- **内存占用**: < 60MB (Global Logger + Hot-Reload)
+- **响应时间**: < 500ms (MCP 工具调用)
+- **日志写入延迟**: < 100ms (从 console 到文件)
+- **可用性**: 99.9%
+
+### 优化策略
+```typescript
+// 批量写入策略
+const BUFFER_SIZE = 100;        // 条数触发
+const FLUSH_INTERVAL = 500;     // ms 触发
+const FILE_SIZE_LIMIT = 10 * 1024 * 1024;  // 10MB 轮转
+
+// 热重载防抖
+const RELOAD_DEBOUNCE = 750;    // ms 防抖延迟
+```
+
+### 性能测试场景
+- **正常负载**: 1-10 条/秒，运行 1 小时
+- **高负载**: 100+ 条/秒，运行 10 分钟
+- **长期稳定性**: 7 天 × 24 小时
+- **极端条件**: 10MB+ 文件，磁盘空间接近满
+
+---
+
+## 🔧 关键实现细节
+
+### 1. 日志拦截机制
+
+**实现原理：函数劫持（Function Hijacking）**
+```typescript
+// 保存原始引用
+const originalLog = console.log;
+const originalError = console.error;
+
+// 定义包装函数
+function newLog(...args: any[]): void {
+  originalLog(...args);      // 保持原有功能
+  logEntry('LOG', args);     // 记录到日志系统
+}
+
+// 替换原始方法
+console.log = newLog;
+```
+
+**参数处理：**
+- 原始类型：直接转字符串
+- 对象类型：JSON.stringify()，处理循环引用
+- Error 类型：提取 message + stack
+- 限制：最多 1000 字符
+
+### 2. 热重载机制
+
+**监听目标：**
+- `main.js` - 插件主文件
+- `styles.css` - 样式文件
+- `manifest.json` - 配置文件
+
+**触发条件：**
+- 插件目录包含 `.git` 或 `.hotreload` 文件
+- 监听文件发生变化
+- 防抖等待 750ms
+
+**重载流程：**
+```
+文件变化检测
+  ↓
+防抖等待（750ms）
+  ↓
+记录变化日志
+  ↓
+执行重载操作
+  ├─ app.plugins.disablePlugin()
+  ├─ 等待卸载完成
+  ├─ app.plugins.enablePlugin()
+  └─ 等待加载完成
+  ↓
+记录重载结果
+```
+
+### 3. MCP 协议实现
+
+**JSON-RPC 2.0 格式：**
+```json
+// 请求
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "read_logs",
+  "params": {
+    "lines": 50,
+    "level": "all"
+  }
+}
+
+// 响应
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "...(日志内容)..."
+}
+```
+
+**工具列表（10个）：**
+- `read_logs` - 读取日志内容
+- `get_log_summary` - 获取统计摘要
+- `get_recent_errors` - 获取最近错误
+- `analyze_errors` - 深度错误分析
+- `get_log_file_path` - 获取日志路径
+- `clear_logs` - 清空日志
+- `get_watched_plugins` - 获取监听的插件列表
+- `reload_plugin` - 手动重载指定插件
+- `get_reload_history` - 获取重载历史
+- `toggle_hot_reload` - 启用/禁用热重载
+
+### 4. 缓存策略
+
+**多层缓存：**
+```python
+# 日志条目缓存（环形缓冲区）
+log_entries = collections.deque(maxlen=1000)
+
+# 错误统计缓存
+error_stats = {
+    "TypeError": 0,
+    "ReferenceError": 0,
+    "undefined": 0
+}
+
+# 文件元数据缓存
+file_metadata = {
+    "size": 0,
+    "lines": 0,
+    "last_modified": None
+}
+```
+
+**失效机制：**
+- 文件 MODIFIED 事件触发缓存更新
+- 搜索结果缓存 5 分钟过期
+- 调用 `clear_logs` 清空所有缓存
+
+---
+
+## 💻 开发工作流
+
+### 环境要求
+- Node.js 16+
+- Python 3.8+
+- Obsidian 0.13.0+
+- Cursor IDE (推荐)
+
+### 快速启动
+
+**1. 插件开发：**
+```bash
+# 克隆仓库
+git clone https://github.com/LINYF510/obsidian-cursor-logger.git
+cd obsidian-cursor-logger
+
+# 安装依赖
+npm install
+
+# 开发模式（Watch 自动编译）
+npm run dev
+
+# 安装到 Obsidian（使用符号链接）
+ln -s $(pwd) /path/to/vault/.obsidian/plugins/obsidian-cursor-logger
+```
+
+**2. 启用热重载：**
+```bash
+# 方式 1：使用 Git（推荐）
+cd /path/to/your-plugin/
+git init
+
+# 方式 2：创建 .hotreload 文件
+touch .hotreload
+```
+
+**3. 配置 MCP Server：**
+编辑 `~/.config/Cursor/User/settings.json`：
+```json
+{
+  "mcpServers": {
+    "obsidian-logger": {
+      "command": "python3",
+      "args": ["/absolute/path/to/mcp-obsidian-logger.py"],
+      "description": "Obsidian 日志收集和热重载服务",
+      "transport": "stdio",
+      "disabled": false
+    }
+  }
+}
+```
+
+### 完整开发流程
+```
+1. 修改插件代码 → 保存
+   ↓
+2. 自动构建（npm run dev）
+   ↓
+3. Auto-Reload 自动重载插件（~1-2秒）
+   ↓
+4. Global Logger 自动收集日志
+   ↓
+5. 在 Cursor 中使用 @obsidian-logger
+   ├─ 日志工具：
+   │  ├─ read_logs：查看最近日志
+   │  ├─ get_log_summary：查看统计
+   │  └─ analyze_errors：分析错误
+   └─ Auto-Reload 工具：
+      ├─ get_auto_reload_status：查看监控状态
+      ├─ manage_watched_plugins：管理监控列表
+      └─ get_reload_statistics：查看重载统计
+   ↓
+6. AI 自动分析问题 → 获得修复建议
+```
+
+**效率对比：**
+- 传统方式：2-3 分钟/次迭代
+- 使用本工具：10-20 秒/次迭代
+- **效率提升：5-10 倍** 🚀
+
+---
+
+## 📋 常见任务指南
+
+### 添加新的 MCP 工具
+
+**步骤：**
+1. 在 `mcp-server/src/tools.py` 中定义工具
+2. 使用 `@mcp.tool()` 装饰器
+3. 编写参数验证和业务逻辑
+4. 更新 `@docs/Obsidian-Cursor Logger 项目开发方案.md` 的工具列表
+5. 添加单元测试
+
+**示例：**
+```python
+@mcp.tool()
+def my_new_tool(param1: str, param2: int = 10) -> str:
+    """
+    工具描述
+    
+    Args:
+        param1: 参数1说明
+        param2: 参数2说明（可选，默认10）
+    
+    Returns:
+        返回值说明
+    """
+    # 参数验证
+    if not param1:
+        return "❌ 参数 param1 不能为空"
+    
+    # 业务逻辑
+    try:
+        result = process_something(param1, param2)
+        return f"✅ 处理成功: {result}"
+    except Exception as e:
+        return f"❌ 处理失败: {str(e)}"
+```
+
+### 修改日志格式
+
+**位置：** `global-logger/src/log-collector.ts`
+
+**当前格式：**
+```
+[HH:MM:SS.mmm] [LEVEL] message
+```
+
+**修改步骤：**
+1. 找到 `formatLogEntry()` 方法
+2. 修改时间戳格式或添加新字段
+3. 更新文档说明新格式
+4. 测试确保 MCP Server 能正确解析
+
+### 调整热重载配置
+
+**防抖延迟：**
+```typescript
+// global-logger/src/hot-reload/file-watcher.ts
+const RELOAD_DEBOUNCE = 750; // 修改此值（毫秒）
+```
+
+**监听文件类型：**
+```typescript
+const WATCHED_FILES = ['main.js', 'styles.css', 'manifest.json'];
+// 添加或移除文件类型
+```
+
+### 优化性能
+
+**检查清单：**
+- [ ] 缓冲区大小是否合适？（默认 100 条）
+- [ ] 刷新间隔是否合适？（默认 500ms）
+- [ ] 日志文件是否过大？（超过 10MB 自动轮转）
+- [ ] 缓存是否及时失效？
+- [ ] 是否有内存泄漏？（使用开发者工具检查）
+
+---
+
+## 🧪 测试要求
+
+### 单元测试
+- **覆盖率**: > 80%
+- **框架**: Jest (TypeScript), pytest (Python)
+- **命令**: `npm test` 或 `pytest`
+
+**测试范围：**
+- 日志拦截逻辑
+- 参数序列化
+- 缓冲区管理
+- 文件操作
+- MCP 工具调用
+- 热重载触发
+
+### 集成测试
+
+**场景：**
+1. 完整日志流（插件 → 文件 → MCP → Cursor）
+2. 性能测试（10000+ 条日志）
+3. 错误恢复（文件删除、磁盘满）
+4. 并发访问（多个 MCP 工具同时调用）
+
+### 性能基准测试
+```bash
+# 运行性能测试
+npm run test:performance
+
+# 期望结果：
+# - CPU < 5%
+# - 内存 < 60MB
+# - 响应时间 < 500ms
+```
+
+---
+
+## ⚠️ 注意事项和最佳实践
+
+### 1. 防止死循环
+- 使用标志位 `isLogging` 防止递归拦截
+- 日志系统自身的输出不再次被拦截
+- 测试时故意触发循环，验证保护机制
+
+### 2. 异常处理策略
+```typescript
+try {
+  // 主要逻辑
+} catch (error) {
+  // 1. 记录错误到控制台
+  console.error('Global Logger 错误:', error);
+  
+  // 2. 不抛出异常，避免影响用户
+  // 3. 尝试恢复或降级处理
+  this.enableFallbackMode();
+}
+```
+
+### 3. 数据安全和备份
+- 日志文件轮转前自动备份
+- `clear_logs` 工具默认备份旧日志
+- 重要操作前检查磁盘空间
+
+### 4. 跨平台兼容性
+- 路径处理使用 `path.join()` 而非硬编码分隔符
+- Windows 路径注意反斜杠转义
+- 测试 macOS、Linux、Windows 三个平台
+
+### 5. 文档同步检查清单
+- [ ] 新功能是否更新了开发方案？
+- [ ] 新文件是否更新了目录结构？
+- [ ] API 变更是否更新了文档？
+- [ ] 示例代码是否可用？
+
+---
+
+## 🎯 快速参考
+
+### 常用命令
+```bash
+# 开发
+npm run dev              # 开发模式
+npm run build            # 生产构建
+npm test                 # 运行测试
+npm run lint             # 代码检查
+
+# Python MCP
+python3 mcp_obsidian_logger.py  # 启动 MCP Server
+pytest                   # 运行测试
+```
+
+### 关键文件
+- **插件入口**: `global-logger/src/main.ts`
+- **日志收集**: `global-logger/src/log-collector.ts`
+- **热重载**: `global-logger/src/hot-reload/`
+- **MCP 主程序**: `mcp-server/src/mcp_obsidian_logger.py`
+- **MCP 工具**: `mcp-server/src/tools.py`
+
+### 日志文件位置
+```
+/path/to/vault/../cursor-logs/obsidian-debug.log
+```
+
+### 在 Cursor 中使用
+```
+# 日志工具
+@obsidian-logger read_logs 查看最近50条日志
+@obsidian-logger get_log_summary 查看统计摘要
+@obsidian-logger analyze_errors 分析所有错误
+
+# Auto-Reload 工具
+@obsidian-logger get_auto_reload_status 查看监控状态
+@obsidian-logger manage_watched_plugins action="get" 查看监控列表
+@obsidian-logger get_reload_statistics 查看重载统计
+```
+
+---
+
+## 📖 文档引用示例
+
+**回答技术问题时：**
+> 根据 `@docs/Obsidian-Cursor Logger 项目开发方案.md` 第 2.1 节，
+> 日志拦截模块使用函数劫持技术，通过保存原始 console 引用并创建
+> 包装器来实现透明拦截。
+
+**开发流程问题时：**
+> 参考 `@docs/development/文档查询建议.md`，开发时应该先启动 `npm run dev`
+> 进入 Watch 模式，然后...
+
+**新建文件时：**
+> 已创建新文件 `mcp-server/src/cache.py`，同时已更新
+> `@docs/预计目录结构.md` 中的文件树。
+
+---
+
+## ✅ 开发检查清单
+
+在提交代码前，确保：
+- [ ] 代码符合 TypeScript/Python 规范
+- [ ] 添加了必要的注释和文档字符串
+- [ ] 单元测试覆盖率 > 80%
+- [ ] 性能指标达标（CPU < 5%, 内存 < 60MB）
+- [ ] 更新了相关文档
+- [ ] 新文件已添加到目录结构文档
+- [ ] 测试通过（`npm test` 或 `pytest`）
+- [ ] 没有引入新的 linter 错误
+
+---
+
+**项目维护者**: LINYF510  
+**文档版本**: v1.0  
+**最后更新**: 2025-11-01
+
+---
+
+💡 **提示**: 开发过程中有任何问题，优先查阅 `@docs/Obsidian-Cursor Logger 项目开发方案.md`，它包含了所有技术细节和实现方案。
+

@@ -1,0 +1,11 @@
+{
+  "id": "obsidian-logger",
+  "name": "Obsidian Logger",
+  "version": "1.0.0",
+  "minAppVersion": "0.13.0",
+  "description": "全局日志收集和智能自动重载 - 为 Obsidian 插件开发者提供完整的调试解决方案",
+  "author": "LINYF510",
+  "authorUrl": "https://github.com/LINYF510",
+  "isDesktopOnly": false
+}
+
